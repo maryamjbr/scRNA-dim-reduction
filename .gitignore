@@ -1,0 +1,8 @@
+.DS_Store
+.ipynb_checkpoints/
+.venv/
+__pycache__/
+*.py[cod]
+
+# Downloaded datasets are retrieved by the notebook.
+data/
