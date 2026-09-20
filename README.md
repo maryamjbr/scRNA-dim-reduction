@@ -1,6 +1,6 @@
 # Dimensionality reduction for selected scRNA-seq datasets
 
-This repository is an educational comparison of PCA, t-SNE, UMAP, and a small variational autoencoder (VAE) on selected single-cell RNA-seq datasets. The research question is narrow: after each method constructs a reduced representation, how well does one K-means run recover the labels used by this notebook, as measured by permutation-invariant clustering metrics?
+This project compares PCA, t-SNE, UMAP, and a small variational autoencoder (VAE) on selected single-cell RNA-seq datasets. After each method produces a reduced representation, K-means is applied and the resulting clusters are compared with the available cell labels using permutation-invariant clustering metrics.
 
 The main artifact is [`scrna_dimensionality_reduction.ipynb`](scrna_dimensionality_reduction.ipynb). It is a **partial reproduction**, not a reproduction of the complete benchmark by Xiang et al. (2021). In particular, the reference study evaluates ten methods, 30 simulated datasets, and five real datasets; this repository evaluates four methods on three selected data subsets.
 
@@ -13,7 +13,7 @@ The main artifact is [`scrna_dimensionality_reduction.ipynb`](scrna_dimensionali
 - Adjusted Rand index (ARI), adjusted mutual information (AMI), and silhouette score.
 - Two-dimensional visualizations and higher-dimensional clustering evaluations.
 
-The previous README described NMI, memory measurement, uniformly normalized inputs, and broad method rankings. The notebook does not support those claims: it computes **AMI**, contains no memory measurement, preprocesses the datasets differently, and provides only single-run dataset-specific results.
+The implementation reports **AMI** rather than NMI, does not measure memory usage, and uses dataset-specific preprocessing. The reported values are single-run results for the datasets used here.
 
 ## Datasets
 
@@ -70,11 +70,11 @@ Accordingly, the numerical values below are results from this repository and mus
 
 | Method | Settings explicitly used |
 |---|---|
-| PCA | `n_components=100` for Deng/Chu or `50` for PBMC (`2` for plots); scikit-learn's other defaults; cleaned notebook sets `random_state=0` |
+| PCA | `n_components=100` for Deng/Chu or `50` for PBMC (`2` for plots); scikit-learn's other defaults; the notebook sets `random_state=0` |
 | t-SNE | Same component counts; `init="random"`; `method="exact"` when dimensions are at least 4 and Barnes-Hut otherwise; `random_state=0`; perplexity and learning rate are not explicitly set and therefore use the installed scikit-learn defaults |
-| UMAP | Same component counts; `n_neighbors=15`; `min_dist=0.1`; Euclidean metric; cleaned notebook sets `random_state=0` |
+| UMAP | Same component counts; `n_neighbors=15`; `min_dist=0.1`; Euclidean metric; the notebook sets `random_state=0` |
 | VAE | Same latent dimensions; architecture and training settings below |
-| K-means | `k` equals known label count (6 Deng, 2 Chu, 11 PBMC); one fit; cleaned notebook uses `n_init=10`, `random_state=0` |
+| K-means | `k` equals known label count (6 Deng, 2 Chu, 11 PBMC); one fit; the notebook uses `n_init=10`, `random_state=0` |
 
 The VAE is trained separately for every dataset and separately for its 2D visualization and higher-dimensional evaluation. Its encoder is `input → 400 ReLU → latent mean/log-variance`; its decoder is `latent → 400 ReLU → sigmoid output`. It minimizes summed binary cross-entropy plus the standard KL-divergence term with Adam (`learning_rate=0.001`), batch size 128, and 500 epochs. Inputs are min-max scaled because binary cross-entropy is used. The implementation adapts the structure of the [official PyTorch VAE example](https://github.com/pytorch/examples/blob/main/vae/main.py); it is not the VAE implementation evaluated by Xiang et al.
 
@@ -84,11 +84,11 @@ The VAE is trained separately for every dataset and separately for its 2D visual
 - **AMI** measures shared information between the true and inferred partitions and adjusts for chance. AMI is what the notebook computes; it is not the NMI reported by Xiang et al.
 - **Silhouette score** measures within-cluster cohesion versus separation from the nearest other cluster. Here it is calculated in the reduced embedding with the predicted K-means labels, not the biological labels or original feature space.
 
-Raw `accuracy_score(true_labels, cluster_ids)` from the earlier notebook was removed because K-means identifiers have no intrinsic correspondence to encoded class identifiers.
+Raw classification accuracy is not used for K-means because cluster identifiers have no intrinsic correspondence to the encoded class identifiers.
 
 ## Results from this repository
 
-These values are transcribed from the outputs saved in repository commit `51779b1` and preserved in [`results/saved_notebook_metrics.csv`](results/saved_notebook_metrics.csv). They are **not newly regenerated results**. The original run fixed only t-SNE's seed; UMAP, K-means, and VAE were unseeded. The cleaned notebook now sets seeds for future runs, so exact reruns may differ.
+These values come from the outputs saved in repository commit `51779b1` and are also stored in [`results/saved_notebook_metrics.csv`](results/saved_notebook_metrics.csv). They are **not newly regenerated results**. In that run, only t-SNE had a fixed seed; UMAP, K-means, and VAE were unseeded. The current notebook sets seeds for future runs, so exact reruns may differ.
 
 “Reduction time” is one saved wall-clock observation around the reduction call only. It excludes data loading, preprocessing, K-means, and metric calculation. The saved notebook reports a CUDA device for VAE while the classical methods use CPU implementations, so these timings are neither a controlled hardware benchmark nor direct evidence of scalability. Memory was not measured.
 
@@ -156,7 +156,7 @@ A full run trains six VAE models (2D and evaluation embeddings for three dataset
 
 ## Provenance and licensing
 
-The VAE follows the official PyTorch example structure. The earlier notebook does not document the provenance of every code fragment, so this cleanup does **not** add a repository license. Before choosing a license, the author should confirm that all remaining code is original or compatible with the intended terms and preserve any required upstream notices.
+The VAE follows the structure of the official PyTorch example. Because the provenance of every code fragment in the original coursework notebook is not fully documented, this repository does not currently include a software license. Any future license should preserve the required upstream notices and be compatible with the remaining code.
 
 ## References
 
